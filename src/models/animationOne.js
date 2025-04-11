@@ -192,7 +192,7 @@ export default class AnimationOneScene {
     // initialize options
     this._options = this._options || {
       get: (el) => el.z,
-      aux: new Array(this.maxInstanceCount),
+      aux: Array.from({ length: this.maxInstanceCount }),
     }
 
     const options = this._options

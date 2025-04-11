@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
 import AnimationTwoScene from '../models/animationTwo.js'
+import PageHeader from '../components/PageHeader.vue'
 
 let scene = null
 const isVisible = ref(true)
@@ -24,7 +25,9 @@ onUnmounted(() => {
 
 <template>
   <div class="container" :class="{ 'fade-out': !isVisible }">
-    <h1>This is animation two.</h1>
+    <PageHeader>
+      <template #heading>This is animation two</template>
+    </PageHeader>
   </div>
   <canvas class="canvas" id="animation-two"></canvas>
 </template>

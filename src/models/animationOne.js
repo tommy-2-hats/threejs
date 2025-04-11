@@ -278,7 +278,7 @@ export default class AnimationOneScene {
       cancelAnimationFrame(this.animationId)
     }
 
-    window.removeEventListener('resize', this.handleResize.bind(this))
+    window.removeEventListener('resize', this.handleResizeBound)
 
     this.cleanup()
 

@@ -145,7 +145,7 @@ export default class HomePageScene {
     }
 
     // Remove event listeners
-    window.removeEventListener('resize', this.handleResize.bind(this))
+    window.removeEventListener('resize', this.handleResizeBound)
 
     // Clear scene
     while (this.scene.children.length > 0) {

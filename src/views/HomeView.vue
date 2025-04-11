@@ -45,6 +45,6 @@ canvas {
   margin-top: 40vh;
   width: 65%;
   height: 60vh;
-  /* background-color: rgb(4, 255, 0); */
+  background-color: rgb(255, 0, 212);
 }
 </style>

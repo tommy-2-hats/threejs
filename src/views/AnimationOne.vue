@@ -12,7 +12,7 @@ onMounted(() => {
   // Set timeout to fade out container after 8 seconds
   setTimeout(() => {
     isVisible.value = false
-  }, 2000)
+  }, 1000)
 })
 
 onUnmounted(() => {

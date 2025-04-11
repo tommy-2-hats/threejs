@@ -11,7 +11,7 @@ onMounted(async () => {
 
   setTimeout(() => {
     isVisible.value = false
-  }, 8000)
+  }, 1000)
 })
 
 onUnmounted(() => {

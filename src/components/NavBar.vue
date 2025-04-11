@@ -26,22 +26,32 @@ const items = [
   position: relative;
   z-index: 10; /* Ensure navbar is above other content */
 }
+
 .container-fluid {
   display: flex;
-  gap: 1rem;
-  /* background-color: aqua; */
-  /* margin-top: 2rem; */
+  /* gap: 1rem; */
 }
+
 .navbar-link {
-  color: #1900ff;
+  background-color: #1900ff; /* Slightly more opaque on hover */
+  color: white; /* Change text color on hover */
   text-decoration: none;
+  backdrop-filter: blur(100px); /* Add blur effect */
+  -webkit-backdrop-filter: blur(100px); /* For Safari */
   padding: 1rem;
   font-size: 1.2rem;
-  /* padding-top: 2rem; */
+  /* border-radius: 6px; Rounded corners */
+  transition: all 0.3s ease; /* Smooth transition */
+}
+
+.navbar-link:hover {
+  color: #1900ff;
+  background-color: white; /* Semi-transparent background */
+  transition: all 0.5s ease; /* Smooth transition */
 }
 
 .navbar-link:focus {
   outline: none; /* Remove default focus outline */
-  border-bottom: 24px solid #1900ff; /* Reduced from 28px to 2px */
+  border-bottom: 24px solid #1900ff; /* Fixed from 24px to 2px */
 }
 </style>

@@ -1,10 +1,6 @@
 import * as THREE from 'three'
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
-import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
-import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js'
-import { DotScreenShader } from 'three/examples/jsm/shaders/DotScreenShader.js'
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 
 export default class HomePageScene {
   constructor(canvasId = 'animation-0') {
@@ -12,13 +8,13 @@ export default class HomePageScene {
     this.scene = null
     this.camera = null
     this.renderer = null
-    this.composer = null // Add composer property
-    this.text = null
+    this.moonModel = null
     this.animationId = null
     this.clock = new THREE.Clock()
+    this.handleResizeBound = this.handleResize.bind(this)
   }
 
-  init() {
+  async init() {
     // Get canvas
     const canvas = document.getElementById(this.canvasId)
     if (!canvas) {
@@ -29,13 +25,18 @@ export default class HomePageScene {
     // Create scene
     this.scene = new THREE.Scene()
 
+    // Add dense bright blue fog
+    const fogColor = new THREE.Color(0x1900ff) // Bright blue color matching your theme
+    const fogDensity = 0.015 // Higher values make fog denser
+    this.scene.fog = new THREE.FogExp2(fogColor, fogDensity)
+
     // Create camera
-    const fov = 75
+    const fov = 10
     const aspect = canvas.clientWidth / canvas.clientHeight
-    const near = 0.1
-    const far = 1000
+    const near = 0.0001
+    const far = 100000000
     this.camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
-    this.camera.position.z = 1.75
+    this.camera.position.set(1.5, -4, 4)
 
     // Create renderer
     this.renderer = new THREE.WebGLRenderer({
@@ -45,71 +46,78 @@ export default class HomePageScene {
     })
     this.renderer.setSize(canvas.clientWidth, canvas.clientHeight)
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-
-    // Set up post-processing
-    this.composer = new EffectComposer(this.renderer)
-    this.composer.addPass(new RenderPass(this.scene, this.camera))
-
-    const effect1 = new ShaderPass(DotScreenShader)
-    effect1.uniforms['scale'].value = 4
-    this.composer.addPass(effect1)
-
-    const effect2 = new ShaderPass(RGBShiftShader)
-    effect2.uniforms['amount'].value = 0.0015
-    this.composer.addPass(effect2)
-
-    const effect3 = new OutputPass()
-    this.composer.addPass(effect3)
-
-    // Create text as a texture on a plane
-    this.createTextPlane()
+    this.renderer.setClearColor(0x000000, 0) // Transparent background
 
     // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+    const ambientLight = new THREE.AmbientLight(0x404040, 1)
     this.scene.add(ambientLight)
 
-    const pointLight = new THREE.PointLight(0xffffff, 1)
-    pointLight.position.set(2, 3, 4)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+    directionalLight.position.set(1, 1, 1)
+    this.scene.add(directionalLight)
+
+    // Add a soft point light to enhance details
+    const pointLight = new THREE.PointLight(0xadd8e6, 1.5)
+    pointLight.position.set(5, 3, 5)
     this.scene.add(pointLight)
 
+    // Load moon model
+    await this.loadMoonModel()
+
     // Handle resize
-    window.addEventListener('resize', this.handleResize.bind(this))
+    window.addEventListener('resize', this.handleResizeBound)
 
     // Start animation loop
     this.animate()
   }
 
-  createTextPlane() {
-    // Create a canvas texture for the text
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-    canvas.width = 512
-    canvas.height = 128
+  async loadMoonModel() {
+    try {
+      // Set up draco loader
+      const dracoLoader = new DRACOLoader()
+      dracoLoader.setDecoderPath('/node_modules/three/examples/jsm/libs/draco/') // Path to draco decoder
 
-    // Clear background
-    context.fillStyle = 'rgba(0,0,0,0)'
-    context.fillRect(0, 0, canvas.width, canvas.height)
+      // Create and configure GLTF loader
+      const loader = new GLTFLoader()
+      loader.setDRACOLoader(dracoLoader)
 
-    // Draw text
-    context.font = 'bold 80px Arial'
-    context.fillStyle = '#1900ff'
-    context.textAlign = 'center'
-    context.textBaseline = 'middle'
-    context.fillText('Buggin Out!', canvas.width / 2, canvas.height / 2)
+      // Load the model
+      const gltf = await new Promise((resolve, reject) => {
+        loader.load(
+          '/src/assets/3d/rantai.glb', // Path to your model
+          resolve,
+          undefined,
+          reject,
+        )
+      })
 
-    // Create texture from canvas
-    const texture = new THREE.CanvasTexture(canvas)
+      this.moonModel = gltf.scene
 
-    // Create a plane with the texture
-    const geometry = new THREE.PlaneGeometry(4, 1)
-    const material = new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      side: THREE.DoubleSide,
-    })
+      // Center the model and scale it appropriately
+      const box = new THREE.Box3().setFromObject(this.moonModel)
+      const center = box.getCenter(new THREE.Vector3())
+      this.moonModel.position.x -= center.x
+      this.moonModel.position.y -= center.y
+      this.moonModel.position.z -= center.z
 
-    this.text = new THREE.Mesh(geometry, material)
-    this.scene.add(this.text)
+      // Scale model to a reasonable size
+      const size = box.getSize(new THREE.Vector3()).length()
+      const scale = 2 / size
+      this.moonModel.scale.set(scale, scale, scale)
+
+      this.scene.add(this.moonModel)
+    } catch (error) {
+      console.error('Failed to load moon model:', error)
+      // Create a fallback sphere if model loading fails
+      const geometry = new THREE.SphereGeometry(1, 32, 32)
+      const material = new THREE.MeshStandardMaterial({
+        color: 0xcccccc,
+        roughness: 0.7,
+        metalness: 0.1,
+      })
+      this.moonModel = new THREE.Mesh(geometry, material)
+      this.scene.add(this.moonModel)
+    }
   }
 
   handleResize() {
@@ -119,7 +127,6 @@ export default class HomePageScene {
 
     if (canvas.width !== width || canvas.height !== height) {
       this.renderer.setSize(width, height, false)
-      this.composer.setSize(width, height) // Add this line
       this.camera.aspect = width / height
       this.camera.updateProjectionMatrix()
     }
@@ -128,27 +135,27 @@ export default class HomePageScene {
   animate() {
     this.animationId = requestAnimationFrame(this.animate.bind(this))
 
-    // Animate the text if it's loaded
-    if (this.text) {
-      const elapsedTime = this.clock.getElapsedTime()
-      this.text.rotation.y = Math.sin(elapsedTime * 0.5) * 0.3
+    const elapsedTime = this.clock.getElapsedTime()
+
+    // Rotate the moon model
+    if (this.moonModel) {
+      this.moonModel.rotation.y = elapsedTime * 1 // Slow rotation
+      this.moonModel.rotation.z = elapsedTime * 1
     }
 
-    // Use composer instead of renderer
-    this.composer.render()
+    // Direct rendering without post-processing
+    this.renderer.render(this.scene, this.camera)
   }
 
   destroy() {
-    // Stop animation
     if (this.animationId) {
       cancelAnimationFrame(this.animationId)
     }
 
-    // Remove event listeners
     window.removeEventListener('resize', this.handleResizeBound)
 
-    // Clear scene
-    while (this.scene.children.length > 0) {
+    // Clean up scene
+    while (this.scene && this.scene.children.length > 0) {
       const object = this.scene.children[0]
       if (object.geometry) object.geometry.dispose()
       if (object.material) {
@@ -159,6 +166,11 @@ export default class HomePageScene {
         }
       }
       this.scene.remove(object)
+    }
+
+    // Dispose renderer
+    if (this.renderer) {
+      this.renderer.dispose()
     }
   }
 }

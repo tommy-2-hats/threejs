@@ -1,4 +1,21 @@
-<script setup></script>
+<script setup>
+import { onMounted, onUnmounted } from 'vue'
+import HomePageScene from '../models/homePage.js'
+
+let scene = null
+
+onMounted(() => {
+  scene = new HomePageScene('animation-0')
+  scene.init()
+})
+
+onUnmounted(() => {
+  if (scene) {
+    scene.destroy()
+    scene = null
+  }
+})
+</script>
 
 <template>
   <main>
@@ -28,6 +45,6 @@ canvas {
   margin-top: 40vh;
   width: 65%;
   height: 60vh;
-  background-color: rgb(4, 255, 0);
+  /* background-color: rgb(4, 255, 0); */
 }
 </style>

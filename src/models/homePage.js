@@ -139,8 +139,8 @@ export default class HomePageScene {
 
     // Rotate the moon model
     if (this.moonModel) {
-      this.moonModel.rotation.y = elapsedTime * 1 // Slow rotation
-      this.moonModel.rotation.z = elapsedTime * 1
+      this.moonModel.rotation.y = elapsedTime * 3 // Slow rotation
+      this.moonModel.rotation.x = elapsedTime * 1
     }
 
     // Direct rendering without post-processing
